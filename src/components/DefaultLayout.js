@@ -33,8 +33,9 @@ const DefaultLayout = ({ children }) => {
     <Layout>
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div className="logo">
-          <h1 className="text-center text-light font-wight-bold mt-4">POS</h1>
+        <div className="logo" style={{display: "flex", flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+          <img src={require('../assets/logo.png')} alt="Logo" style={{ width: '25px', height: '25px', marginTop: "15px"}} />
+          {!collapsed && <h1 className="text-center text-light font-wight-bold mt-4" style={{marginLeft: '10px'}}>Pizza Palace</h1>}
         </div>
         <Menu
           theme="dark"

@@ -14,7 +14,7 @@ const ItemPage = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      const { data } = await axios.get("/api/items/get-item");
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/items/get-item`);
       setItemsData(data);
       dispatch({ type: "HIDE_LOADING" });
       console.log(data);
@@ -35,7 +35,7 @@ const ItemPage = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      await axios.post("/api/items/delete-item", { itemId: record._id });
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/items/delete-item`, { itemId: record._id });
       message.success("Item Deleted Succesfully");
       getAllItems();
       setPopupModal(false);
@@ -89,7 +89,7 @@ const ItemPage = () => {
         dispatch({
           type: "SHOW_LOADING",
         });
-        const res = await axios.post("/api/items/add-item", {...value, totalPrice:0});
+        const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/items/add-item`, {...value, totalPrice:0});
         message.success("Item Added Succesfully");
         getAllItems();
         setPopupModal(false);
@@ -104,7 +104,7 @@ const ItemPage = () => {
         dispatch({
           type: "SHOW_LOADING",
         });
-        await axios.put("/api/items/edit-item", {
+        await axios.put(`${process.env.REACT_APP_API_URL}/api/items/edit-item`, {
           ...value,
           itemId: editItem._id,
         });
@@ -157,10 +157,15 @@ const ItemPage = () => {
             </Form.Item>
             <Form.Item name="category" label="Category">
               <Select>
-                <Select.Option value="drinks">Drinks</Select.Option>
-                <Select.Option value="burgers">Burgers</Select.Option>
-                <Select.Option value="pizzas">Pizzas</Select.Option>
-                <Select.Option value="nuggets">Nuggets</Select.Option>
+                <Select.Option value="Chicken & Sides">Chicken &amp; Sides</Select.Option>
+                <Select.Option value="Drinks">Drinks</Select.Option>
+                <Select.Option value="Burgers">Burgers</Select.Option>
+                <Select.Option value="Shawarmas">Shawarmas</Select.Option>
+                <Select.Option value="Pizzas">Pizzas</Select.Option>
+                <Select.Option value="Ice Cream">Ice Cream</Select.Option>
+                <Select.Option value="Pasta">Pasta</Select.Option>
+                <Select.Option value="Sauces">Sauces</Select.Option>
+                <Select.Option value="Deals">Deals</Select.Option>
               </Select>
             </Form.Item>
 

@@ -8,21 +8,22 @@ import {
   PlusCircleOutlined,
   MinusCircleOutlined,
 } from "@ant-design/icons";
-import { Table, Button, Modal, message, Form, Input, Select } from "antd";
+import { Table, Button, Modal, message, Form, Input } from "antd";
 import { useReactToPrint } from "react-to-print";
 const CartPage = () => {
   const [subTotal, setSubTotal] = useState(0);
   const [billPopup, setBillPopup] = useState(false);
   const [popupModal, setPopupModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [discount, setDiscount] = useState(0); // percentage, default 0
   const [discountAmount, setDiscountAmount] = useState(0); // calculated amount
-
-  const [billsData, setBillsData] = useState([]);
-  const [selectedBill, setSelectedBill] = useState(null);
+  const [selectedBill, setSelectedBill] = useState(null);// ➊ NEW helper: simple phone regex (10–11 digits)
+  const phoneRegex = /^[0-9]{11}$/;
   const componentRef = useRef();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { cartItems } = useSelector((state) => state.rootReducer);
+
   //handle increament
   const handleIncreament = (record) => {
     dispatch({
@@ -43,6 +44,7 @@ const CartPage = () => {
     onAfterPrint: () => {
       // Clear cart after printing
       dispatch({ type: "CLEAR_CART" });
+      navigate('/')
     }
   });
 
@@ -104,57 +106,41 @@ const CartPage = () => {
     setDiscountAmount(discountAmt);
   }, [subTotal, discount]);
 
-  const handleSubmit = async (value) => {
+  const handleSubmit = async (values) => {
     try {
+      setLoading(true);
+
+      const safeName =
+        values.customerName?.trim() || `Customer-${Date.now()}`;
+      const safeNumber =
+        values.customerNumber?.trim() || "0000000000";
 
       const newObject = {
-        ...value,
+        ...values,
+        customerName: safeName,
+        customerNumber: safeNumber,
         paymentMode: "cash",
         cartItems,
         subTotal,
         tax: Number(((subTotal / 100) * 10).toFixed(2)),
         discountPercenatge: `${discount}%`,
-        discountAmount: discountAmount,
-        afterDiscount: subTotal - discount,
-        totalAmount: Number(
-          Number(subTotal)
-          // Number(subTotal) + Number(((subTotal / 100) * 10).toFixed(2))
-        ),
+        discountAmount,
+        afterDiscount: subTotal - discountAmount,
+        totalAmount: Number(subTotal),
         userId: JSON.parse(localStorage.getItem("auth"))._id,
+        date: new Date().toISOString(),
       };
 
-      // Save bill
-      await axios.post("/api/bills/add-bills", newObject);
-      message.success("Bill Generated");
-
-      // Close Create Invoice modal
+      setSelectedBill(newObject);
       setBillPopup(false);
-
-      // Fetch and sort bills
-      const { data } = await axios.get("/api/bills/get-bills");
-      const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setBillsData(sortedData);
-      console.log('sortedData', sortedData);
-
-      // Find latest bill for the matching customerName
-      const matchedBill = sortedData.find(
-        bill => bill.customerName?.trim().toLowerCase() === value.customerName?.trim().toLowerCase()
-      );
-
-      if (matchedBill) {
-        setSelectedBill(matchedBill);
-        setPopupModal(true);
-      } else {
-        message.warning("No matching bill found for the customer.");
-      }
-
-    } catch (error) {
+      setPopupModal(true);
+    } catch (err) {
       message.error("Something went wrong");
-      console.error(error);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
-
-
 
   return (
     <DefaultLayout>
@@ -202,13 +188,36 @@ const CartPage = () => {
         onCancel={() => setBillPopup(false)}
         footer={false}
       >
-        <Form layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="customerName" label="Customer Name">
-            <Input />
+        <Form
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{ customerName: "", customerNumber: "" }}
+        >
+          <Form.Item
+            name="customerName"
+            label="Customer Name"
+            rules={[
+              { required: true, message: "Please enter customer name" },
+              { min: 2, message: "Name must be at least 2 characters" },
+            ]}
+          >
+            <Input placeholder="e.g. Ali Khan" />
           </Form.Item>
-          <Form.Item name="customerNumber" label="Contact Number">
-            <Input />
+
+          <Form.Item
+            name="customerNumber"
+            label="Contact Number"
+            rules={[
+              { required: true, message: "Please enter phone number" },
+              {
+                pattern: phoneRegex,
+                message: "Phone must be 11 digits (numbers only)",
+              },
+            ]}
+          >
+            <Input placeholder="03XXXXXXXXX" />
           </Form.Item>
+
 
           {/* <Form.Item name="paymentMode" label="Payment Method">
 
@@ -224,9 +233,10 @@ const CartPage = () => {
 
           </div>
           <div className="d-flex justify-content-end">
-            <Button type="primary" htmlType="submit">
+            <Button type="primary" htmlType="submit" loading={loading}>
               Generate Bill
             </Button>
+
           </div>
         </Form>
       </Modal>
@@ -239,7 +249,7 @@ const CartPage = () => {
           visible={popupModal}
           onCancel={() => {
             setPopupModal(false);
-            dispatch({ type: "CLEAR_CART" });
+            // dispatch({ type: "CLEAR_CART" });
             setDiscount(0)
             setDiscountAmount(0)
           }}
@@ -248,7 +258,9 @@ const CartPage = () => {
           {/* ============ invoice modal start ==============  */}
           <div id="invoice-POS" ref={componentRef}>
             <center id="top">
-              <div className="logo" />
+              <div>
+                <img src={require('../assets/logo.png')} alt="Logo" style={{ width: '50px', height: '50px' }} />
+              </div>
               <div className="info">
                 <h2 style={{ fontSize: "1.1em" }}>Pizza Palace And Ice Parlour</h2>
                 <p> Contact : xxxxxxxxxx</p>
@@ -334,9 +346,24 @@ const CartPage = () => {
           </div>
           {/*End Invoice*/}
           <div className="d-flex justify-content-end mt-3">
-            <Button type="primary" onClick={handlePrint}>
-              Print
+            <Button type="primary" onClick={async () => {
+              try {
+                await handlePrint(); // Print
+                await axios.post(`${process.env.REACT_APP_API_URL}/api/bills/add-bills`, selectedBill); // Save to backend
+                message.success("Bill Generated & Saved");
+                setPopupModal(false);
+                dispatch({ type: "CLEAR_CART" });
+                setDiscount(0);
+                setDiscountAmount(0);
+                navigate("/")
+              } catch (error) {
+                console.error("Print or Save failed:", error);
+                message.error("Error occurred while printing or saving.");
+              }
+            }}>
+              Print & Save
             </Button>
+
           </div>
           {/* ============ invoice modal ends ==============  */}
         </Modal>

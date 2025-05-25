@@ -11,7 +11,7 @@ const CutomerPage = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      const { data } = await axios.get("/api/bills/get-bills");
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/bills/get-bills`);
       const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setBillsData(sortedData);
       dispatch({ type: "HIDE_LOADING" });

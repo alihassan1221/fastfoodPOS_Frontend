@@ -14,7 +14,7 @@ const Register = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      await axios.post("/api/users/register", value);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/users/register`, value);
       message.success("Register Succesfully");
       navigate("/login");
       dispatch({ type: "HIDE_LOADING" });
@@ -36,7 +36,7 @@ const Register = () => {
     <>
       <div className="register">
         <div className="regsiter-form">
-          <h1>POS APP</h1>
+          <h1>Pizza Palace and Ice Parlour</h1>
           <h3>Register Page</h3>
           <Form layout="vertical" onFinish={handleSubmit}>
             <Form.Item name="name" label="Name">

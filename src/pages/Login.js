@@ -13,7 +13,7 @@ const Login = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      const res = await axios.post("/api/users/login", value);
+      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/login`, value);
       dispatch({ type: "HIDE_LOADING" });
       message.success("user login Succesfully");
       localStorage.setItem("auth", JSON.stringify(res.data));
@@ -36,7 +36,7 @@ const Login = () => {
     <>
       <div className="register">
         <div className="regsiter-form">
-          <h1>POS APP</h1>
+          <h1>Pizza Palace and Ice Parlour</h1>
           <h3>Login Page</h3>
           <Form layout="vertical" onFinish={handleSubmit}>
             <Form.Item name="userId" label="User ID">
