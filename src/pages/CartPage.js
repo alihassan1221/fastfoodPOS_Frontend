@@ -113,7 +113,13 @@ const CartPage = () => {
       const safeName =
         values.customerName?.trim() || `Customer-${Date.now()}`;
       const safeNumber =
-        values.customerNumber?.trim() || "0000000000";
+        values.customerNumber?.trim() || "11111111111";
+
+      const now = new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Karachi"
+      });
+      const iso = new Date(now).toISOString(); // Proper sortable string
+
 
       const newObject = {
         ...values,
@@ -128,7 +134,7 @@ const CartPage = () => {
         afterDiscount: subTotal - discountAmount,
         totalAmount: Number(subTotal),
         userId: JSON.parse(localStorage.getItem("auth"))._id,
-        date: new Date().toISOString(),
+        date: iso,
       };
 
       setSelectedBill(newObject);
@@ -207,13 +213,13 @@ const CartPage = () => {
           <Form.Item
             name="customerNumber"
             label="Contact Number"
-            rules={[
-              { required: true, message: "Please enter phone number" },
-              {
-                pattern: phoneRegex,
-                message: "Phone must be 11 digits (numbers only)",
-              },
-            ]}
+          // rules={[
+          //   { required: true, message: "Please enter phone number" },
+          //   {
+          //     pattern: phoneRegex,
+          //     message: "Phone must be 11 digits (numbers only)",
+          //   },
+          // ]}
           >
             <Input placeholder="03XXXXXXXXX" />
           </Form.Item>
@@ -275,7 +281,10 @@ const CartPage = () => {
                   <br />
                   Phone No : <b>{selectedBill.customerNumber}</b>
                   <br />
-                  Date : <b>{selectedBill.date.toString().substring(0, 10)}</b>
+                  Date : <b>{new Date(selectedBill.date).toLocaleDateString("en-CA", {
+                    timeZone: "Asia/Karachi"
+                  })
+                  }</b>
                   <br />
                 </p>
                 <hr style={{ margin: "5px" }} />
