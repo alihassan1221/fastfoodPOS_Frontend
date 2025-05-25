@@ -393,7 +393,7 @@ const BillsPage = () => {
               </div>
               <div className="info">
                 <h2 style={{ fontSize: "1.1em" }}>Pizza Palace And Ice Parlour</h2>
-                <p>Contact : xxxxxxxxxxx</p>
+                <p> Contact : 03004200967 | 03099027713</p>
               </div>
             </center>
 
