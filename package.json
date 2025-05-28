@@ -1,5 +1,5 @@
 {
-  "proxy": "https://10f57aa9-af9d-4495-84af-5a37b860fd5d.e1-us-east-azure.choreoapps.dev",
+  "proxy": "http://localhost:8080",
   "name": "client",
   "version": "0.1.0",
   "private": true,

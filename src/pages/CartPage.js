@@ -133,6 +133,7 @@ const CartPage = () => {
         discountAmount,
         afterDiscount: subTotal - discountAmount,
         totalAmount: Number(subTotal),
+        // isDeleted: false,
         userId: JSON.parse(localStorage.getItem("auth"))._id,
         date: iso,
       };
@@ -184,7 +185,15 @@ const CartPage = () => {
         <h3>
           Total : Rs  <b> {subTotal - discountAmount}</b> /-{" "}
         </h3>
-        <Button type="primary" onClick={() => setBillPopup(true)}>
+        <Button type="primary" 
+        onClick={() => 
+          // setBillPopup(true)
+          handleSubmit({
+            customerName: '',
+            customerNumber:''
+          })
+        }
+        >
           Create Invoice
         </Button>
       </div>
@@ -202,12 +211,12 @@ const CartPage = () => {
           <Form.Item
             name="customerName"
             label="Customer Name"
-            rules={[
-              { required: true, message: "Please enter customer name" },
-              { min: 2, message: "Name must be at least 2 characters" },
-            ]}
+            // rules={[
+            //   { required: true, message: "Please enter customer name" },
+            //   { min: 2, message: "Name must be at least 2 characters" },
+            // ]}
           >
-            <Input placeholder="e.g. Ali Khan" />
+            <Input placeholder="e.g. Ali Hassan" />
           </Form.Item>
 
           <Form.Item
@@ -277,10 +286,10 @@ const CartPage = () => {
             <div id="mid">
               <div className="mt-2">
                 <p>
-                  Customer Name : <b>{selectedBill.customerName}</b>
+                  {/* Customer Name : <b>{selectedBill.customerName}</b>
                   <br />
                   Phone No : <b>{selectedBill.customerNumber}</b>
-                  <br />
+                  <br /> */}
                   Date : <b>{new Date(selectedBill.date).toLocaleDateString("en-CA", {
                     timeZone: "Asia/Karachi"
                   })

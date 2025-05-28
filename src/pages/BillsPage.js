@@ -1,15 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Table, Modal, Button, message } from "antd";
-import { EyeOutlined } from "@ant-design/icons";
+import { Table, Modal, Button, message, Popconfirm } from "antd";
+import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { useReactToPrint } from "react-to-print";
 import DefaultLayout from "../components/DefaultLayout";
 import "../styles/InvoiceStyles.css";
 
-// ──────────────────────────────────────────────────────────────
-//  Date helpers (kept local for a single-file solution)
-// ──────────────────────────────────────────────────────────────
 const isSameDay = (d1, d2) =>
   d1.getFullYear() === d2.getFullYear() &&
   d1.getMonth() === d2.getMonth() &&
@@ -20,21 +17,20 @@ const isYesterday = (bill, now = new Date()) =>
 
 const isSameWeek = (d1, d2) => {
   const start = new Date(d2);
-  const day = d2.getDay(); // 0 = Sunday
-  const diff = (day === 0 ? -6 : 1 - day); // if Sunday, go back 6 days
+  const day = d2.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
   start.setDate(start.getDate() + diff);
   start.setHours(0, 0, 0, 0);
 
   const end = new Date(start);
-  end.setDate(start.getDate() + 7); // next Monday
+  end.setDate(start.getDate() + 7);
 
   return d1 >= start && d1 < end;
 };
 
-
 const isLastWeek = (bill, now = new Date()) => {
   const day = now.getDay();
-  const diff = (day === 0 ? -6 : 1 - day); // Adjust for Monday start
+  const diff = (day === 0 ? -6 : 1 - day);
   const thisWeekStart = new Date(now);
   thisWeekStart.setDate(thisWeekStart.getDate() + diff);
   thisWeekStart.setHours(0, 0, 0, 0);
@@ -44,7 +40,6 @@ const isLastWeek = (bill, now = new Date()) => {
 
   return bill >= lastWeekStart && bill < thisWeekStart;
 };
-
 
 const isSameMonth = (d1, d2) =>
   d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
@@ -57,9 +52,6 @@ const isLastMonth = (bill, now = new Date()) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────
-//  Small display box for each total
-// ──────────────────────────────────────────────────────────────
 const StatsBox = ({ label, value }) => (
   <div
     style={{
@@ -78,9 +70,6 @@ const StatsBox = ({ label, value }) => (
   </div>
 );
 
-// ──────────────────────────────────────────────────────────────
-//  MAIN COMPONENT
-// ──────────────────────────────────────────────────────────────
 const BillsPage = () => {
   const dispatch = useDispatch();
   const componentRef = useRef();
@@ -97,7 +86,7 @@ const BillsPage = () => {
     lastMonth: 0,
   });
 
-  // ── Fetch all bills
+  // Fetch all bills excluding deleted ones
   const getAllBills = async () => {
     try {
       dispatch({ type: "SHOW_LOADING" });
@@ -105,12 +94,15 @@ const BillsPage = () => {
         `${process.env.REACT_APP_API_URL}/api/bills/get-bills`
       );
 
+      // Filter out deleted bills (assuming deleted flag exists)
+      const filteredData = data.filter((bill) => !bill.deleted);
+
       // newest first
-      const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const sorted = filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
       setBillsData(sorted);
       dispatch({ type: "HIDE_LOADING" });
 
-      // ── calculate running totals
+      // Calculate totals
       const now = new Date();
       const t = { today: 0, yesterday: 0, week: 0, lastWeek: 0, month: 0, lastMonth: 0 };
       sorted.forEach((bill) => {
@@ -136,10 +128,26 @@ const BillsPage = () => {
     // eslint-disable-next-line
   }, []);
 
-  // ── print invoice
+  // Soft delete handler
+  const handleDelete = async (id) => {
+    try {
+      dispatch({ type: "SHOW_LOADING" });
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/bills/delete-bill/${id}`, {
+        isDeleted: true, // or whatever your API expects
+      });
+      message.success("Bill deleted successfully");
+      setPopupModal(false);
+      getAllBills();
+      dispatch({ type: "HIDE_LOADING" });
+    } catch (err) {
+      dispatch({ type: "HIDE_LOADING" });
+      message.error("Failed to delete bill");
+      console.error(err);
+    }
+  };
+
   const handlePrint = useReactToPrint({ content: () => componentRef.current });
 
-  // ── Ant Design table columns
   const columns = [
     { title: "ID", dataIndex: "_id" },
     { title: "Customer Name", dataIndex: "customerName" },
@@ -152,20 +160,29 @@ const BillsPage = () => {
       title: "Actions",
       dataIndex: "_id",
       render: (id, record) => (
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <EyeOutlined
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", fontSize: 18 }}
             onClick={() => {
               setSelectedBill(record);
               setPopupModal(true);
             }}
           />
+          <Popconfirm
+            title="Are you sure you want to delete this bill?"
+            onConfirm={() => handleDelete(id)}
+            okText="Yes"
+            cancelText="No"
+            icon={false}
+          >
+            <DeleteOutlined style={{ color: "red", cursor: "pointer", fontSize: 18 }} />
+          </Popconfirm>
         </div>
+
       ),
     },
   ];
-  console.log(selectedBill);
-  console.log('Popup Menu', popupModal)
+
   return (
     <DefaultLayout>
       <h1>Invoice list</h1>
@@ -179,9 +196,9 @@ const BillsPage = () => {
         <StatsBox label="Last Month" value={totals.lastMonth} />
       </div>
 
-      <Table columns={columns} dataSource={billsData} bordered />
+      <Table columns={columns} dataSource={billsData} bordered rowKey="_id" />
 
-      {popupModal && (
+      {popupModal && selectedBill && (
         <Modal
           width={400}
           pagination={false}
@@ -195,7 +212,11 @@ const BillsPage = () => {
           <div id="invoice-POS" ref={componentRef}>
             <center id="top">
               <div>
-                <img src={require('../assets/logo.png')} alt="Logo" style={{ width: '50px', height: '50px' }} />
+                <img
+                  src={require("../assets/logo.png")}
+                  alt="Logo"
+                  style={{ width: "50px", height: "50px" }}
+                />
               </div>
               <div className="info">
                 <h2 style={{ fontSize: "1.1em" }}>Pizza Palace And Ice Parlour</h2>
@@ -205,42 +226,64 @@ const BillsPage = () => {
 
             <div id="mid" className="mt-2">
               <p>
-                Customer Name : <b>{selectedBill.customerName}</b>
+                {/* Customer Name : <b>{selectedBill.customerName}</b>
                 <br />
                 Phone No : <b>{selectedBill.customerNumber}</b>
-                <br />
-                Date : <b>{new Date(selectedBill.date).toLocaleDateString("en-CA", {
-                    timeZone: "Asia/Karachi"
-                  })}</b>
+                <br /> */}
+                Date :{" "}
+                <b>
+                  {new Date(selectedBill.date).toLocaleDateString("en-CA", {
+                    timeZone: "Asia/Karachi",
+                  })}
+                </b>
               </p>
               <hr style={{ margin: 5 }} />
             </div>
 
             <div id="bot">
-              <div id="table" style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+              <div
+                id="table"
+                style={{ width: "100%", display: "flex", justifyContent: "center" }}
+              >
                 <table style={{ width: "95%" }}>
                   <tbody>
                     <tr className="tabletitle">
-                      <td className="item"><h2>Item</h2></td>
-                      <td className="Hours"><h2>Qty</h2></td>
-                      <td className="Rate"><h2>Price</h2></td>
-                      <td className="Rate"><h2>Total</h2></td>
+                      <td className="item">
+                        <h2>Item</h2>
+                      </td>
+                      <td className="Hours">
+                        <h2>Qty</h2>
+                      </td>
+                      <td className="Rate">
+                        <h2>Price</h2>
+                      </td>
+                      <td className="Rate">
+                        <h2>Total</h2>
+                      </td>
                     </tr>
                     {selectedBill.cartItems.map((item) => (
                       <tr key={item._id}>
                         <td style={{ border: "0.1px solid #040404" }}>{item.name}</td>
                         <td style={{ border: "0.1px solid #040404" }}>{item.quantity}</td>
                         <td style={{ border: "0.1px solid #040404" }}>{item.price}</td>
-                        <td style={{ border: "0.1px solid #040404" }}>{item.quantity * item.price}</td>
+                        <td style={{ border: "0.1px solid #040404" }}>
+                          {item.quantity * item.price}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <p style={{ textAlign: "right", margin: 5 }}><b>Total: {selectedBill.totalAmount} Rs</b></p>
-              <p style={{ textAlign: "right", margin: 5 }}><b>Discount: {selectedBill.discountPercenatge}</b></p>
-              <p style={{ textAlign: "right", margin: 5 }}><b>After Discount: {selectedBill.afterDiscount} Rs</b></p>
+              <p style={{ textAlign: "right", margin: 5 }}>
+                <b>Total: {selectedBill.totalAmount} Rs</b>
+              </p>
+              <p style={{ textAlign: "right", margin: 5 }}>
+                <b>Discount: {selectedBill.discountPercenatge}</b>
+              </p>
+              <p style={{ textAlign: "right", margin: 5 }}>
+                <b>After Discount: {selectedBill.afterDiscount} Rs</b>
+              </p>
 
               <div id="legalcopy">
                 <p className="legal" style={{ textAlign: "center" }}>
@@ -251,7 +294,9 @@ const BillsPage = () => {
           </div>
 
           <div className="d-flex justify-content-end mt-3">
-            <Button type="primary" onClick={handlePrint}>Print</Button>
+            <Button type="primary" onClick={handlePrint}>
+              Print
+            </Button>
           </div>
         </Modal>
       )}

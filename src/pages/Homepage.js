@@ -1,25 +1,28 @@
 import React, { useState, useEffect, useMemo } from "react";
 import DefaultLayout from "./../components/DefaultLayout";
 import axios from "axios";
-import { Row, Col, message, Spin } from "antd";
+import { Row, Col, message, Spin, Input, Button } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import ItemList from "../components/ItemList";
 
 const categories = [
   { name: "Burgers", imageUrl: "https://cdn-icons-png.flaticon.com/512/877/877951.png" },
-  { name: "Chicken & Sides", imageUrl: "https://cdn-icons-png.flaticon.com/512/837/837555.png" },
-  { name: "Drinks", imageUrl: "https://cdn-icons-png.flaticon.com/512/2405/2405479.png" },
-  { name: "Shawarmas", imageUrl: "https://cdn-icons-png.flaticon.com/512/5787/5787071.png" },
   { name: "Pizzas", imageUrl: "https://cdn-icons-png.flaticon.com/512/3132/3132693.png" },
-  { name: "Ice Cream", imageUrl: "https://cdn-icons-png.flaticon.com/512/3157/3157358.png" },
+  { name: "Pratha Rolls and Wraps", imageUrl: "https://cdn-icons-png.flaticon.com/512/5787/5787071.png" },
   { name: "Pasta", imageUrl: "https://cdn-icons-png.flaticon.com/512/3480/3480618.png" },
-  { name: "Deals", imageUrl: "https://cdn-icons-png.flaticon.com/512/737/737967.png"},
-  { name: "Sauces", imageUrl: "https://cdn-icons-png.flaticon.com/512/2253/2253432.png"},
+  { name: "Chicken & Sides", imageUrl: "https://cdn-icons-png.flaticon.com/512/837/837555.png" },
+  { name: "Ice Cream", imageUrl: "https://cdn-icons-png.flaticon.com/512/3157/3157358.png" },
+  { name: "Deals", imageUrl: "https://cdn-icons-png.flaticon.com/512/737/737967.png" },
+  { name: "Drinks", imageUrl: "https://cdn-icons-png.flaticon.com/512/2405/2405479.png" },
+  { name: "Sauces", imageUrl: "https://cdn-icons-png.flaticon.com/512/2253/2253432.png" },
 ];
 
 const Homepage = () => {
   const [itemsData, setItemsData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Burgers");
+  const [searchText, setSearchText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const dispatch = useDispatch();
   const loading = useSelector((state) => state.loading);
@@ -42,9 +45,26 @@ const Homepage = () => {
     getAllItems();
   }, [dispatch]);
 
+  const handleSearch = () => {
+    setSearchQuery(searchText.trim().toLowerCase());
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   const filteredItems = useMemo(() => {
-    return itemsData.filter((i) => i.category === selectedCategory);
-  }, [itemsData, selectedCategory]);
+    if (searchQuery) {
+      return itemsData.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery)
+      );
+    } else {
+      return itemsData.filter((item) => item.category === selectedCategory);
+    }
+  }, [itemsData, selectedCategory, searchQuery]);
+
 
   return (
     <DefaultLayout>
@@ -54,13 +74,32 @@ const Homepage = () => {
         </div>
       ) : (
         <>
+          {/* Search Bar */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20, gap: 8 }}>
+            <Input
+              placeholder="Search items..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              style={{ maxWidth: 300 }}
+            />
+            <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+              Search
+            </Button>
+          </div>
+
+          {/* Category Bar */}
           <div className="categories-container" style={{ display: "flex", overflowX: "auto", padding: "10px 0", gap: "12px" }}>
             {categories.map((category) => (
               <div
                 key={category.name}
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedCategory(category.name)}
+                onClick={() => {
+                  setSelectedCategory(category.name);
+                  setSearchText("");
+                  setSearchQuery("");
+                }}
                 onKeyPress={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     setSelectedCategory(category.name);
@@ -88,13 +127,15 @@ const Homepage = () => {
             ))}
           </div>
 
-          <Row gutter={[16, 16]}>
+          <Row gutter={[4, 8]} style={{ margin: 0 }}>
             {filteredItems.map((item) => (
-              <Col xs={24} sm={12} md={8} lg={6} key={item.id}>
+              <Col xs={12} sm={12} md={8} lg={6} key={item._id} style={{ padding: 4 }}>
                 <ItemList item={item} />
               </Col>
             ))}
           </Row>
+
+
         </>
       )}
     </DefaultLayout>

@@ -160,7 +160,7 @@ const ItemPage = () => {
                 <Select.Option value="Chicken & Sides">Chicken &amp; Sides</Select.Option>
                 <Select.Option value="Drinks">Drinks</Select.Option>
                 <Select.Option value="Burgers">Burgers</Select.Option>
-                <Select.Option value="Shawarmas">Shawarmas</Select.Option>
+                <Select.Option value="Pratha Rolls and Wraps">Pratha Rolls and Wraps</Select.Option>
                 <Select.Option value="Pizzas">Pizzas</Select.Option>
                 <Select.Option value="Ice Cream">Ice Cream</Select.Option>
                 <Select.Option value="Pasta">Pasta</Select.Option>
