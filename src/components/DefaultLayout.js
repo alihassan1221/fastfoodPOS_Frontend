@@ -48,6 +48,9 @@ const DefaultLayout = ({ children }) => {
           <Menu.Item key="/bills" icon={<CopyOutlined />}>
             <Link to="/bills">Bills</Link>
           </Menu.Item>
+          <Menu.Item key="/salesReport" icon={<CopyOutlined />}>
+            <Link to="/salesReport">Sales</Link>
+          </Menu.Item>
           <Menu.Item key="/items" icon={<UnorderedListOutlined />}>
             <Link to="/items">Items</Link>
           </Menu.Item>

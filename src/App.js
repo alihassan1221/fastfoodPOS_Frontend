@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import BillsPage from "./pages/BillsPage";
 import CutomerPage from "./pages/CutomerPage";
+import SalesReportPage from "./pages/SalesReportPage";
 
 function App() {
   return (
@@ -50,6 +51,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CutomerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/salesReport"
+            element={
+              <ProtectedRoute>
+                <SalesReportPage />
               </ProtectedRoute>
             }
           />
